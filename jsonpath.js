@@ -80,12 +80,14 @@ function jsonPath(obj, expr, arg) {
          }
       },
       eval: function(x, _v, _vname) {
-         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@") // issue 7 : resolved ..
-                                       .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : null}) // 2020/01/09 - manage regexp syntax "=~"
+         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v")
+                                       .replace(/\\@/g, "@") // issue 7 : resolved ..
+                                       .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
                                      );
              }
-         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v").replace(/\\@/g, "@") // issue 7 : resolved ..
-		                                                                     .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : null}) // 2020/01/09 - manage regexp syntax "=~"
+         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
+                                                                             .replace(/\\@/g, "@") // issue 7 : resolved ..
+		                                                             .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
 		                                 );
                   }
       }
