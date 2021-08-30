@@ -7,6 +7,7 @@
  * Issue 7 resolved
  *
  * 2020/01/09 - Add a patch to enable conditional regex as in jayway jsonpath ("=~")
+ * 2021/08/30 - Replace all "instanceof Array", not robust enough: https://web.mit.edu/jwalden/www/isArray.html
  *
  */
 function jsonPath(obj, expr, arg) {
@@ -46,7 +47,7 @@ function jsonPath(obj, expr, arg) {
             else if (/^\(.*?\)$/.test(loc)) // [(expr)]
                P.trace(P.eval(loc, val, path.substr(path.lastIndexOf(";")+1))+";"+x, val, path);
             else if (/^\?\(.*?\)$/.test(loc)) // [?(expr)]
-               P.walk(loc, x, val, path, function(m,l,x,v,p) { if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), v instanceof Array ? v[m] : v, m)) P.trace(m+";"+x,v,p); }); // issue 5 resolved
+               P.walk(loc, x, val, path, function(m,l,x,v,p) { if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), Array.isArray(v) ? v[m] : v, m)) P.trace(m+";"+x,v,p); }); // issue 5 resolved
             else if (/^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$/.test(loc)) // [start:end:step]  python slice syntax
                P.slice(loc, x, val, path);
             else if (/,/.test(loc)) { // [name1,name2,...]
@@ -58,7 +59,7 @@ function jsonPath(obj, expr, arg) {
             P.store(path, val);
       },
       walk: function(loc, expr, val, path, f) {
-         if (val instanceof Array) {
+         if (Array.isArray(val)) {
             for (var i=0,n=val.length; i<n; i++)
                if (i in val)
                   f(i,loc,expr,val,path);
@@ -70,7 +71,7 @@ function jsonPath(obj, expr, arg) {
          }
       },
       slice: function(loc, expr, val, path) {
-         if (val instanceof Array) {
+         if (Array.isArray(val)) {
             var len=val.length, start=0, end=len, step=1;
             loc.replace(/^(-?[0-9]*):(-?[0-9]*):?(-?[0-9]*)$/g, function($0,$1,$2,$3){start=parseInt($1||start);end=parseInt($2||end);step=parseInt($3||step);});
             start = (start < 0) ? Math.max(0,start+len) : Math.min(len,start);
