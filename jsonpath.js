@@ -8,6 +8,7 @@
  *
  * 2020/01/09 - Add a patch to enable conditional regex as in jayway jsonpath ("=~")
  * 2021/08/30 - Replace all "instanceof Array", not robust enough: https://web.mit.edu/jwalden/www/isArray.html
+ * 2021/09/06 - Refine conditional regex as it was buggy when grouping test conditions + add nullish coalescing operator (??) management
  *
  */
 function jsonPath(obj, expr, arg) {
@@ -83,13 +84,13 @@ function jsonPath(obj, expr, arg) {
       eval: function(x, _v, _vname) {
          try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v")
                                        .replace(/\\@/g, "@") // issue 7 : resolved ..
-                                       .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
+                                       .replace(/(_v(?:(?!(?:&&|\|\||\?\?)).)*?) *=~ *(?:\/(.*?)\/([igmsuy]*))(?= *(?:&&|\|\||\?\?|\)|))/g, (match, p1, p2, p3) => { return match ? RegExp(p2,p3)+'.test('+p1+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
                                      );
              }
          catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
                                                                              .replace(/\\@/g, "@") // issue 7 : resolved ..
-		                                                             .replace(/(_v(?:(?!(\|\||&&)).)*)=~((?:(?!\)* *(\|\||&&)).)*)/g, (match, p1, p2, p3, offset, currentString) => { return match ? p3.trim()+'.test('+p1.trim()+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
-		                                 );
+                                                                             .replace(/(_v(?:(?!(?:&&|\|\||\?\?)).)*?) *=~ *(?:\/(.*?)\/([igmsuy]*))(?= *(?:&&|\|\||\?\?|\)|))/g, (match, p1, p2, p3) => { return match ? RegExp(p2,p3)+'.test('+p1+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
+                                                                             );
                   }
       }
    };
