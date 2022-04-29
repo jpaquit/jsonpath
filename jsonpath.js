@@ -9,6 +9,7 @@
  * 2020/01/09 - Add a patch to enable conditional regex as in jayway jsonpath ("=~")
  * 2021/08/30 - Replace all "instanceof Array", not robust enough: https://web.mit.edu/jwalden/www/isArray.html
  * 2021/09/06 - Refine conditional regex as it was buggy when grouping test conditions + add nullish coalescing operator (??) management
+ * 2022/04/29 - Issue 4 fix was not enough, breaks on "$.[?(@.property == 'string(sequel)')]"
  *
  */
 function jsonPath(obj, expr, arg) {
@@ -17,7 +18,7 @@ function jsonPath(obj, expr, arg) {
       result: [],
       normalize: function(expr) {
          var subx = [];
-         return expr.replace(/[\['](\??\(.*?\))[\]']|\['(.*?)'\]/g, function($0,$1,$2){return "[#"+(subx.push($1||$2)-1)+"]";})  /* http://code.google.com/p/jsonpath/issues/detail?id=4 */
+         return expr.replace(/\[((\??\(|')(.*?(?<!\\)(?:\\\\)*)(\2|\)))\]/g, function($0,$1){return "[#"+(subx.push($1||undefined)-1)+"]";})  /* http://code.google.com/p/jsonpath/issues/detail?id=4 */
                     .replace(/'?\.'?|\['?/g, ";")
                     .replace(/;;;|;;/g, ";..;")
                     .replace(/;$|'?\]|'$/g, "")
