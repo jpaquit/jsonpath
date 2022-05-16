@@ -38,18 +38,18 @@ function jsonPath(obj, expr, arg) {
          if (expr !== "") {
             var x = expr.split(";"), loc = x.shift();
             x = x.join(";");
-            if (val && val.hasOwnProperty(loc))
+            if (val && Object.prototype.hasOwnProperty.call(val,loc))
                P.trace(x, val[loc], path + ";" + loc);
             else if (loc === "*")
-               P.walk(loc, x, val, path, function(m,l,x,v,p) { P.trace(m+";"+x,v,p); });
+               P.walk(loc, x, val, path, (m,l,x,v,p) => P.trace(m+";"+x,v,p));
             else if (loc === "..") {
                P.trace(x, val, path);
-               P.walk(loc, x, val, path, function(m,l,x,v,p) { typeof v[m] === "object" && P.trace("..;"+x,v[m],p+";"+m); });
+               P.walk(loc, x, val, path, (m,l,x,v,p) => typeof v[m] === "object" ? P.trace("..;"+x,v[m],p+";"+m) : false);
             }
             else if (/^\(.*?\)$/.test(loc)) // [(expr)]
-               P.trace(P.eval(loc, val, path.substr(path.lastIndexOf(";")+1))+";"+x, val, path);
+               P.trace(P.eval(loc, val)+";"+x, val, path);
             else if (/^\?\(.*?\)$/.test(loc)) // [?(expr)]
-               P.walk(loc, x, val, path, function(m,l,x,v,p) { if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), Array.isArray(v) ? v[m] : v, m)) P.trace(m+";"+x,v,p); }); // issue 5 resolved
+               P.walk(loc, x, val, path, (m,l,x,v,p) => { if (P.eval(l.replace(/^\?\((.*?)\)$/,"$1"), Array.isArray(v) ? v[m] : v)) P.trace(m+";"+x,v,p); }); // issue 5 resolved
             else if (/^(-?[0-9]*):(-?[0-9]*):?([0-9]*)$/.test(loc)) // [start:end:step]  python slice syntax
                P.slice(loc, x, val, path);
             else if (/,/.test(loc)) { // [name1,name2,...]
@@ -68,7 +68,7 @@ function jsonPath(obj, expr, arg) {
          }
          else if (typeof val === "object") {
             for (var m in val)
-               if (val.hasOwnProperty(m))
+               if (Object.prototype.hasOwnProperty.call(val,m))
                   f(m,loc,expr,val,path);
          }
       },
@@ -82,15 +82,16 @@ function jsonPath(obj, expr, arg) {
                P.trace(i+";"+expr, val, path);
          }
       },
-      eval: function(x, _v, _vname) {
-         try { return $ && _v && eval(x.replace(/(^|[^\\])@/g, "$1_v")
+      eval: function(x, _v) {
+         try { return $ && _v && eval(x.replace(/(?<=^|(?<!\\)(?:\\\\)*)@(?![\da-z])/gi, "_v")
                                        .replace(/\\@/g, "@") // issue 7 : resolved ..
-                                       .replace(/(_v(?:(?!(?:&&|\|\||\?\?)).)*?) *=~ *(?:\/(.*?)\/([igmsuy]*))(?= *(?:&&|\|\||\?\?|\)|))/g, (match, p1, p2, p3) => { return match ? RegExp(p2,p3)+'.test('+p1+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
+                                       .replace(/\(* *(_v(?:\[(['"`]).*?(?<!\\)\2\]|\.[^\s]*?)*) *(?!&&|\|\||\?\?)=~ *\/(.*?(?<!\\)(?:\\\\)*)\/([igmsuy]*) *\)*(?=(?:(?:(?:&&|\|\||\?\?)(?= *\(* *_v)))|$)/g, (match, p1, p2, p3, p4) => {return match ? ' '+RegExp(p3,p4)+'.test('+p1+') ' : match}) // 2020/01/09 - manage regexp syntax "=~"
                                      );
              }
-         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(^|[^\\])@/g, "$1_v")
+         catch(e) { 
+            throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(?<=^|(?<!\\)(?:\\\\)*)@(?![\da-z])/gi, "_v")
                                                                              .replace(/\\@/g, "@") // issue 7 : resolved ..
-                                                                             .replace(/(_v(?:(?!(?:&&|\|\||\?\?)).)*?) *=~ *(?:\/(.*?)\/([igmsuy]*))(?= *(?:&&|\|\||\?\?|\)|))/g, (match, p1, p2, p3) => { return match ? RegExp(p2,p3)+'.test('+p1+')' : match}) // 2020/01/09 - manage regexp syntax "=~"
+                                                                             .replace(/\(* *(_v(?:\[(['"`]).*?(?<!\\)\2\]|\.[^\s]*?)*) *(?!&&|\|\||\?\?)=~ *\/(.*?(?<!\\)(?:\\\\)*)\/([igmsuy]*) *\)*(?=(?:(?:(?:&&|\|\||\?\?)(?= *\(* *_v)))|$)/g, (match, p1, p2, p3, p4) => { return match ? ' '+RegExp(p3,p4)+'.test('+p1+') ' : match}) // 2020/01/09 - manage regexp syntax "=~"
                                                                              );
                   }
       }
