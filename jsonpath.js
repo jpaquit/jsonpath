@@ -83,17 +83,12 @@ function jsonPath(obj, expr, arg) {
          }
       },
       eval: function(x, _v) {
-         try { return $ && _v && eval(x.replace(/(?<=^|(?<!\\)(?:\\\\)*)@(?![\da-z])/gi, "_v")
-                                       .replace(/\\@/g, "@") // issue 7 : resolved ..
-                                       .replace(/\(* *(_v(?:\[(['"`]).*?(?<!\\)\2\]|\.[^\s]*?)*) *(?!&&|\|\||\?\?)=~ *\/(.*?(?<!\\)(?:\\\\)*)\/([igmsuy]*) *\)*(?=(?:(?:(?:&&|\|\||\?\?)(?= *\(* *_v)))|$)/g, (match, p1, p2, p3, p4) => {return match ? ' '+RegExp(p3,p4)+'.test('+p1+') ' : match}) // 2020/01/09 - manage regexp syntax "=~"
-                                     );
-             }
-         catch(e) { 
-            throw new SyntaxError("jsonPath: " + e.message + ": " + x.replace(/(?<=^|(?<!\\)(?:\\\\)*)@(?![\da-z])/gi, "_v")
-                                                                             .replace(/\\@/g, "@") // issue 7 : resolved ..
-                                                                             .replace(/\(* *(_v(?:\[(['"`]).*?(?<!\\)\2\]|\.[^\s]*?)*) *(?!&&|\|\||\?\?)=~ *\/(.*?(?<!\\)(?:\\\\)*)\/([igmsuy]*) *\)*(?=(?:(?:(?:&&|\|\||\?\?)(?= *\(* *_v)))|$)/g, (match, p1, p2, p3, p4) => { return match ? ' '+RegExp(p3,p4)+'.test('+p1+') ' : match}) // 2020/01/09 - manage regexp syntax "=~"
-                                                                             );
-                  }
+         let evaluationString = `${x.replace(/(?<=^|(?<!\\)(?:\\\\)*)@(?![\da-z])/gi, "_v")
+                                 .replace(/\\@/g, "@") // issue 7 : resolved ..
+                                 .replace(/\(* *(_v(?:\[(['"`]).*?(?<!\\)\2\]|\.[^\s]*?)*) *(?!&&|\|\||\?\?)=~ *\/(.*?(?<!\\)(?:\\\\)*)\/([igmsuy]*) *\)*(?=(?:(?:(?:&&|\|\||\?\?)(?= *\(* *_v)))|$)/g, (match, p1, p2, p3, p4) => {return match ? ' '+RegExp(p3,p4)+'.test('+p1+') ' : match}) // 2020/01/09 - manage regexp syntax "=~"
+         }`
+         try { return $ && _v && (Function(`let _v = arguments[0]; return ${evaluationString}`))(_v) }
+         catch(e) { throw new SyntaxError("jsonPath: " + e.message + ": " + evaluationString) }
       }
    };
 
